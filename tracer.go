@@ -2,6 +2,7 @@ package tracer
 
 import (
 	"context"
+	"fmt"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -11,8 +12,6 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
-
-	"github.com/philippe-berto/logger"
 )
 
 const baseVersion = "1.0.0"
@@ -24,7 +23,7 @@ type (
 	}
 )
 
-func New(ctx context.Context, cfg Config, serviceName, appName string, log *logger.Logger) (func(context.Context) error, error) {
+func New(ctx context.Context, cfg Config, serviceName, appName string) (func(context.Context) error, error) {
 	if !cfg.Enable {
 		return ShutdownNull, nil
 	}
@@ -36,10 +35,7 @@ func New(ctx context.Context, cfg Config, serviceName, appName string, log *logg
 		),
 	)
 	if err != nil {
-		log.WithFields(logger.Fields{"error": err.Error()}).
-			Error("Telemetry Tracer: Could not setup exporter")
-
-		return nil, err
+		return nil, fmt.Errorf("Otel tracer: Could not setup exporter: %w", err)
 	}
 
 	resources, err := resource.New(ctx,
@@ -49,10 +45,7 @@ func New(ctx context.Context, cfg Config, serviceName, appName string, log *logg
 		),
 	)
 	if err != nil {
-		log.WithFields(logger.Fields{"error": err.Error()}).
-			Error("Telemetry tracer: Could not setup resources")
-
-		return nil, err
+		return nil, fmt.Errorf("Otel tracer: Could not setup resources: %w", err)
 	}
 
 	tracer := sdktrace.NewTracerProvider(
